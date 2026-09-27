@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<script>
+(function () {
+  try {
+    var pref = localStorage.getItem('spe-theme') || 'system';
+    var resolved = pref === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : pref;
+    document.documentElement.setAttribute('data-theme', resolved);
+  } catch (e) {}
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Serial Position Effect — Memory Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <header class="app-bar" id="app-bar">
+    <span class="app-bar__title">Serial Position Effect</span>
+    <button id="btn-settings" class="icon-btn" aria-label="Open settings" title="Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </header>
+
+  <!-- ============ LANDING SCREEN ============ -->
+  <main id="screen-landing" class="screen screen--paper is-active">
+    <div class="card card--intro">
+      <div class="badge-icon" aria-hidden="true">
+        <svg viewBox="0 0 64 24" width="48" height="20">
+          <path d="M2 2 C 2 22, 22 22, 32 12 C 42 2, 62 2, 62 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="eyebrow-free-label">A short memory experiment</p>
+      <h1>The Serial Position Effect</h1>
+      <p class="lede">
+        When people study a list, they tend to remember the words at the
+        <em>start</em> and the <em>end</em> far better than the words in the
+        <em>middle</em>. Psychologists call this the serial position effect,
+        and plotted across many attempts it traces a distinctive U-shaped curve.
+      </p>
+
+      <div class="how-it-works">
+        <h2>How this test works</h2>
+        <ol>
+          <li>You'll see 10 words, one at a time — a fresh random selection every attempt.</li>
+          <li>Once the list ends, write down every word you can recall.</li>
+          <li>We'll score your recall by position and show you the results.</li>
+        </ol>
+      </div>
+
+      <p id="landing-error" class="field-error" hidden></p>
+
+      <div class="button-row">
+        <button id="btn-start" class="btn btn--primary">Start Test</button>
+        <button id="btn-view-history-landing" class="btn btn--secondary">View Past Attempts</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ WORD PRESENTATION SCREEN ============ -->
+  <main id="screen-test" class="screen screen--stimulus">
+    <div class="stimulus-word" id="word-display" aria-live="polite"></div>
+    <div class="stimulus-progress" id="progress-display"></div>
+  </main>
+
+  <!-- ============ RECALL SCREEN ============ -->
+  <main id="screen-recall" class="screen screen--paper">
+    <div class="card">
+      <h1>Test complete</h1>
+      <p class="lede">Enter every word you remember. Separate them with spaces, commas, or new lines — order doesn't matter.</p>
+
+      <textarea
+        id="recall-input"
+        class="recall-textarea"
+        rows="5"
+        placeholder="apple, river, phone, tiger, book"
+      ></textarea>
+      <p id="recall-error" class="field-error" hidden></p>
+
+      <label class="related-label" for="related-input">
+        Optional: any other words that came to mind, even if they weren't on the list
+      </label>
+      <textarea
+        id="related-input"
+        class="recall-textarea recall-textarea--secondary"
+        rows="2"
+        placeholder="e.g. fruit, water, sky"
+      ></textarea>
+
+      <button id="btn-submit-recall" class="btn btn--primary">Submit Recall</button>
+    </div>
+  </main>
+
+  <!-- ============ RESULTS SCREEN ============ -->
+  <main id="screen-results" class="screen screen--paper">
+    <div class="card card--wide">
+      <h1>Your results</h1>
+      <p class="lede lede--muted" id="results-note">Scored by the Spring Boot backend.</p>
+
+      <div id="input-notes" class="input-notes" hidden></div>
+
+      <div class="stat-grid" id="stat-grid"></div>
+
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr><th>Position</th><th>Word</th><th>Recalled?</th></tr>
+        </thead>
+        <tbody id="results-table-body"></tbody>
+      </table>
+
+      <div id="semantic-section" class="semantic-section" hidden>
+        <h2>Semantic associations detected</h2>
+        <p class="lede lede--muted">
+          Experimental research feature — this flags words you missed outright
+          where you produced something loosely related instead. It doesn't
+          prove Spreading Activation Theory, just checks a small hardcoded
+          word-association list.
+        </p>
+        <ul id="semantic-list" class="semantic-list"></ul>
+      </div>
+
+      <div id="relations-section" class="semantic-section semantic-section--relations" hidden>
+        <h2>Semantic relations</h2>
+        <p class="lede lede--muted">
+          Reference only — the known association(s) on file for each word in
+          this attempt's list, whether or not they came up in your recall.
+        </p>
+        <ul id="relations-list" class="semantic-list semantic-list--relations"></ul>
+      </div>
+
+      <div class="button-row">
+        <button id="btn-view-graph" class="btn btn--primary">View U-Shaped Graph</button>
+        <button id="btn-view-history" class="btn btn--secondary">View Past Attempts</button>
+        <button id="btn-restart" class="btn btn--secondary">Run Another Attempt</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ AGGREGATE GRAPH SCREEN ============ -->
+  <main id="screen-graph" class="screen screen--paper">
+    <div class="card card--wide">
+      <h1>Serial position curve</h1>
+      <p class="lede lede--muted" id="graph-attempts-note">
+        Aggregated recall percentage by position, across every attempt stored so far.
+      </p>
+
+      <div class="chart-wrap">
+        <canvas id="spe-chart"></canvas>
+      </div>
+      <p id="graph-error" class="field-error" hidden></p>
+
+      <button id="btn-graph-back" class="btn btn--secondary">Back to Results</button>
+    </div>
+  </main>
+
+  <!-- ============ HISTORY SCREEN ============ -->
+  <main id="screen-history" class="screen screen--paper">
+    <div class="card card--wide">
+      <h1>Past attempts</h1>
+      <p class="lede lede--muted">Every attempt stored in the database, most recent first.</p>
+
+      <p id="history-error" class="field-error" hidden></p>
+      <ul id="history-list" class="history-list"></ul>
+
+      <div id="history-detail" class="history-detail" hidden>
+        <h2>Attempt detail</h2>
+        <div class="stat-grid" id="history-detail-stats"></div>
+        <table class="results-table">
+          <thead><tr><th>Position</th><th>Word</th><th>Recalled?</th></tr></thead>
+          <tbody id="history-detail-table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="button-row">
+        <button id="btn-clear-history-page" class="btn btn--danger">Clear All History</button>
+        <button id="btn-history-back" class="btn btn--secondary">Back</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ SETTINGS MODAL ============ -->
+  <div id="settings-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-labelledby="settings-title">
+      <div class="modal__header">
+        <h2 id="settings-title">Settings</h2>
+        <button id="btn-settings-close" class="icon-btn" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="modal__section">
+        <p class="modal__label">Appearance</p>
+        <div class="segmented" id="theme-picker">
+          <button class="segmented__option" data-theme-choice="light" type="button">Light</button>
+          <button class="segmented__option" data-theme-choice="dark" type="button">Dark</button>
+          <button class="segmented__option" data-theme-choice="system" type="button">System</button>
+        </div>
+      </div>
+
+      <div class="modal__section">
+        <p class="modal__label">Time per word: <span id="interval-value">1.0s</span></p>
+        <input type="range" id="interval-slider" min="1" max="3" step="0.5" value="1" />
+        <p class="modal__hint">Applies the next time you start a test.</p>
+      </div>
+
+      <div class="modal__section modal__section--danger">
+        <p class="modal__label">Data</p>
+        <button id="btn-clear-history-settings" class="btn btn--danger btn--full" type="button">Clear All Attempt History</button>
+        <p id="settings-clear-status" class="modal__hint" hidden></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
